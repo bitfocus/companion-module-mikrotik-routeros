@@ -1,0 +1,24 @@
+{
+	"name": "mikrotik-routeros",
+	"version": "1.0.0",
+	"api_version": "1.0.0",
+	"keywords": [
+		"Protocol",
+		"Router"
+	],
+	"manufacturer": "Mikrotik",
+	"product": "RouterOs",
+	"shortname": "mikrotik",
+	"description": "mikrotik-routeros plugin for Companion",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>",
+	"license": "MIT",
+	"dependencies": {
+		"core-decorators": "^0.20.0",
+		"mikronode": "^2.3.11",
+		"rxjs": "^5.3.0"
+	}
+}
