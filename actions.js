@@ -8,10 +8,19 @@ module.exports = {
 	* @since 1.1.0
 	*/
 
-	getActions() {
+	getActions(self) {
 		var actions = {};
 
 		actions['test'] = { label: 'Test stuff' };
+
+		actions['disableInterface'] = { label: 'Disable a port' };/*,
+			options: [{
+				type: 'dropdown',
+				label: 'port name',
+				id: 'interfaceID',
+				choices: self.CHOICES_INTERFACES
+			}]
+		};*/
 
 		return actions;
 	}
