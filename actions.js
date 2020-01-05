@@ -1,27 +1,19 @@
-module.exports = {
+exports.getActions = function(self) {
 
-	/**
-	* Get the available actions.
-	*
-	* @returns {Object[]} the available actions
-	* @access public
-	* @since 1.1.0
-	*/
+		var actions = {
+			'fill_interfaces': { label: 'Fill interfaces'},
+			'disableInterface': {
+				label: 'Disable a port',
+				options: [{
+					type: 'dropdown',
+					label: 'port name',
+					id: 'interfaceID',
+					choices: self.CHOICES_INTERFACES
+				}]
+			},
 
-	getActions(self) {
-		var actions = {};
+		};
 
-		actions['test'] = { label: 'Test stuff' };
+		return(actions);
 
-		actions['disableInterface'] = { label: 'Disable a port' };/*,
-			options: [{
-				type: 'dropdown',
-				label: 'port name',
-				id: 'interfaceID',
-				choices: self.CHOICES_INTERFACES
-			}]
-		};*/
-
-		return actions;
-	}
 }
