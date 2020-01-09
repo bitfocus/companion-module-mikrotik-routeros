@@ -1,8 +1,11 @@
 # Module for Mikrotik RouterOS
 
-* Would like to see;
+## Supported commands
 
-* Port POE power on/off could be nice to reboot stuff
-* Raw API commands + some fixed actions like "Disable interface" "Enable interface"
-* it would be nice with a renew ip thing as well..
-* if companion could renew and control inteface enable/disable, we could make a button that switches between 4G wan and cabled wan
+* **Disable or enable an interface/port**
+* **Send custom API command** give command and then options in JSON String (see example when you add the action)
+
+## Future whishes
+
+* Port POE power on/off could be nice to reboot stuff; /interface ethernet poe, poe-out (auto-on | forced-on | off; Default: auto-on)
+* Add DHCP to port; /ip dhcp-client add interface=ether1 disabled=no

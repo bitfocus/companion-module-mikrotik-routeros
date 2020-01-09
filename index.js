@@ -26,90 +26,77 @@ instance.prototype.action = function (action) {
 	var self = this;
 	var opt = action.options;
 
+	var self = this;
 
-	switch (action.action) {
-		case 'test':
-			break;
+	if(self.config.host !== undefined && self.config.user !== undefined && self.config.password !==undefined) {
 
-		case 'disableInterface':
+		var Device = new MikroNode(self.config.host);
+		Device.connect().then(([login])=>login(self.config.user,self.config.password)).then(function(conn) {
+			self.status(self.STATUS_OK);
 
-			var Device = new MikroNode(this.config.host);
-			Device.connect().then(([login])=>login('admin','5px89chm')).then(function(conn) {
-				console.log("Logged in.");
-				conn.closeOnDone(true); // All channels need to complete before the connection will close.
-				var listenChannel=conn.openChannel("listen");
+			conn.closeOnDone(true); // All channels need to complete before the connection will close.
+			var listenChannel=conn.openChannel("listen");
 
-				// Each sentence that comes from the device goes through the data stream.
-				listenChannel.data.subscribe(function(data) {
-						// var packet=MikroNode.resultsToObj(data);
-						console.log('Interface change: ',JSON.stringify(data));
-				},error=>{
-						console.log("Error during listenChannel subscription",error) // This shouldn't be called.
-				},()=>{
-						console.log("Listen channel done.");
-				});
-
-				// Tell our listen channel to notify us of changes to interfaces.
-				listenChannel.write('/interface/listen').then(result=>{
-						console.log("Listen channel done promise.",result);
-				})
-				// Catch shuold be called when we call /cancel (or listenChannel.close())
-				.catch(error=>console.log("Listen channel rejection:",error));
-
-				// All our actions go through this.
-				var actionChannel=conn.openChannel("action",false); // don't close on done... because we are running these using promises, the commands complete before each then is complete.
-
-				// Do things async. This is to prove that promises work as expected along side streams.
-				actionChannel.sync(false);
-				actionChannel.closeOnDone(false); // Turn off closeOnDone because the timeouts set to allow the mikrotik to reflect the changes takes too long. The channel would close.
-
-				// These will run synchronsously (even though sync is not set to true)
-				console.log("Disabling interface");
-				actionChannel.write('/interface/set',{'disabled':'yes','.id':'ether4.1'}).then(results=>{
-						console.log("Disable complete.");
-						// when the first item comes in from the listen channel, it should send the next command.
-						const {promise,resolve,reject}=MikroNode.getUnwrappedPromise();
-						listenChannel.data
-								.take(1)
-								// This is just to prove that it grabbed the first one.
-								.do(d=>console.log("Data:",MikroNode.resultsToObj(d.data)))
-								.subscribe(d=>actionChannel.write('/interface/set',{'disabled':'no','.id':'ether4.1'}).then(resolve,reject));
-						return promise;
-				})
-				.then(results=>{
-						console.log("Enabled complete.");
-						// return new Promise((r,x)=>setTimeout(r,1000)).then(()=>actionChannel.write('/interface/getall'));
-						const {promise,resolve,reject}=MikroNode.getUnwrappedPromise();
-						// when the second item comes in from the listen channel, it should send the next command.
-						listenChannel.data
-								.take(1)
-								// This is just to prove that it grabbed the second one.
-								.do(d=>console.log("Data:",MikroNode.resultsToObj(d.data)))
-								.subscribe(d=>actionChannel.write('/interface/getall').then(resolve,reject));
-						return promise;
-				})
-				.then(results=>{
-						var formatted=MikroNode.resultsToObj(results.data);
-						var columns=[".id","name","mac-address","comment"];
-						var filtered=formatted.map(line=>columns.reduce((p,c)=>{p[c]=line[c];return p},{}));
-						console.log('Interface [ID,Name,MAC-Address]: ',JSON.stringify(filtered,true,4));
-				})
-				.catch(error=>{
-						console.log("An error occurred during one of the above commands: ",error);
-				})
-				// This runs after all commands above, or if an error occurs.
-				.then(nodata=>{
-						console.log("Closing everything.");
-						listenChannel.close(true); // This should call the /cancel command to stop the listen.
-						actionChannel.close();
-				});
+			// Each sentence that comes from the device goes through the data stream.
+			listenChannel.data.subscribe(function(data) {
+					// var packet=MikroNode.resultsToObj(data);
+					//console.log('Interface change: ',JSON.stringify(data));
+			},error=>{
+					self.log('error',"Error during listenChannel subscription",error) // This shouldn't be called.
+			},()=>{
+				//	console.log("Listen channel done.");
 			});
-			break;
 
-		case 'fill_interfaces':
+			// Tell our listen channel to notify us of changes to interfaces.
+			listenChannel.write('/interface/listen').then(result=>{
+					//console.log("Listen channel done promise.",result);
+			})
+			// Catch should be called when we call /cancel (or listenChannel.close())
+			.catch(error=>self.log('error',"Listen channel rejection:",error));
 
-			break;
+			// All our actions go through this.
+			var actionChannel=conn.openChannel("action",false); // don't close on done... because we are running these using promises, the commands complete before each then is complete.
+
+			switch (action.action) {
+
+				case 'disableInterface':
+					actionChannel.write('/interface/set',{'disabled':opt.disabled,'.id':opt.interface}).then(results=>{
+						self.log('info', 'Setting complete: '+ opt.interface);
+					})
+					.catch(error=>{
+							self.log('error', "An error occurred during one of the above commands: ",error);
+					})
+					.then(nodata=>{
+								self.log('info', 'Closing channels');
+								listenChannel.close(true); // This should call the /cancel command to stop the listen.
+								actionChannel.close();
+					});
+					break;
+				case 'customCommand':
+					actionChannel.write(opt.APIcommand, JSON.parse(opt.APIoptions)).then(results=>{
+						self.log('info', 'Setting complete: '+ opt.customCommand);
+					})
+					.catch(error=>{
+							self.log('error', "An error occurred during one of the above commands: ",error);
+					})
+					.then(nodata=>{
+								self.log('info', 'Closing channels');
+								listenChannel.close(true); // This should call the /cancel command to stop the listen.
+								actionChannel.close();
+					});
+					break;
+				default:
+					self.log('info', 'Closing channels');
+					listenChannel.close(true); // This should call the /cancel command to stop the listen.
+					actionChannel.close();
+			}
+
+			// This runs after all commands above, or if an error occurs.
+
+		});
+
 	}
+
 }
 
 instance.prototype.config_fields = function () {
@@ -170,8 +157,7 @@ instance.prototype.init_connection = function() {
 		var Device = new MikroNode(self.config.host);
 		Device.connect().then(([login])=>login(self.config.user,self.config.password)).then(function(conn) {
 			self.status(self.STATUS_OK);
-			debug("logged in");
-			console.log("logged in");
+			self.log("debug","logged in");
 
 			conn.closeOnDone(true); // All channels need to complete before the connection will close.
 			var listenChannel=conn.openChannel("listen");
@@ -204,7 +190,7 @@ instance.prototype.init_connection = function() {
 				var jsonFormatted = JSON.parse(jsonString);
 
 				for (let i in jsonFormatted) {
-					console.log("Got: ", jsonFormatted[i].name);
+					//console.log("Got: ", jsonFormatted[i].name);
 					instance.prototype.CHOICES_INTERFACES.push({label: jsonFormatted[i].name, id: jsonFormatted[i].name});
 				}
 				//Reload actions
@@ -215,7 +201,7 @@ instance.prototype.init_connection = function() {
 			})
 			// This runs after all commands above, or if an error occurs.
 			.then(nodata=>{
-					console.log("Closing everything.");
+					self.log("debug","fishined with first data");
 					listenChannel.close(true); // This should call the /cancel command to stop the listen.
 					actionChannel.close();
 			});
