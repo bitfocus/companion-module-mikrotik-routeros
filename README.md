@@ -1,3 +1,2 @@
 # companion-module-mikrotik-routeros
-
-check HELP.md
+See HELP.md and LICENSE
