@@ -67,6 +67,33 @@ class instance extends instance_skel {
 									actionChannel.close();
 						});
 						break;
+					case 'dhcp':
+						actionChannel.write(`/ip dhcp-client add interface=${opt.interface} disabled=${opt.disabled}`).then(results=>{
+							this.log('info', 'DHCP setting complete on: '+ opt.interface);
+						})
+						.catch(error=>{
+								this.log('error', "An error occurred during one of the above commands: ",error);
+						})
+						.then(nodata=>{
+									this.log('info', 'Closing channels');
+									listenChannel.close(true); // This should call the /cancel command to stop the listen.
+									actionChannel.close();
+						});
+						break;
+						///interface ethernet poe, poe-out (auto-on | forced-on | off; Default: auto-on)
+					case 'poe':
+						actionChannel.write(`/interface ethernet poe set ${opt.interface} poe-out ${opt.options}`).then(results=>{
+							this.log('info', 'POE setting complete on: '+ opt.interface);
+						})
+						.catch(error=>{
+								this.log('error', "An error occurred during one of the above commands: ",error);
+						})
+						.then(nodata=>{
+									this.log('info', 'Closing channels');
+									listenChannel.close(true); // This should call the /cancel command to stop the listen.
+									actionChannel.close();
+						});
+						break;
 					case 'customCommand':
 						actionChannel.write(opt.APIcommand, JSON.parse(opt.APIoptions)).then(results=>{
 							this.log('info', 'Setting complete: '+ opt.customCommand);
@@ -80,11 +107,10 @@ class instance extends instance_skel {
 									actionChannel.close();
 						});
 						break;
-					default:
-						this.log('info', 'Closing channels');
-						listenChannel.close(true); // This should call the /cancel command to stop the listen.
-						actionChannel.close();
-				}
+					}
+					this.log('info', 'Closing channels');
+					listenChannel.close(true); // This should call the /cancel command to stop the listen.
+					actionChannel.close();
 
 				// This runs after all commands above, or if an error occurs.
 			});
