@@ -1,4 +1,4 @@
-exports.getActions = function(self) {
+exports.getActions = function(CHOICES_INTERFACES) {
 
 		var actions = {
 			'disableInterface': {
@@ -7,7 +7,7 @@ exports.getActions = function(self) {
 					type: 'dropdown',
 					label: 'port name',
 					id: 'interface',
-					choices: self.CHOICES_INTERFACES
+					choices: CHOICES_INTERFACES
 				},{
 					type: 'dropdown',
 					label: 'enable/disable',
